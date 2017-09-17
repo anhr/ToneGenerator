@@ -1,7 +1,7 @@
 # ToneGenerator
 Tone generator on your web page
 
-Example: <a href='http://anhr.ucoz.net/ToneGenerator/' target="_blank">Tree Element</a>.
+Example: <a href='http://anhr.ucoz.net/ToneGenerator/' target="_blank">Tone Generator</a>.
 
 ## On the following browsers have been successfully tested:
 
