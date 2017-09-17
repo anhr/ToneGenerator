@@ -35,6 +35,8 @@ LG Smart tv
 
 	Chrome  doesn't support 
 
+Thanks to <a href='https://github.com/RolandR/tonegen' target="_blank">RolandR/tonegen</a>
+
 ## Have a job for me?
 Please read <a href='http://anhr.ucoz.net/AboutMe/' target="_blank">About Me</a>.
 
