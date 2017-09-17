@@ -29,5 +29,6 @@
     <None Include="..\tonegen\tonegen.js">
       <Filter>tonegen</Filter>
     </None>
+    <None Include="README.md" />
   </ItemGroup>
 </Project>
