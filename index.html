@@ -1,0 +1,42 @@
+﻿<HTML>
+<HEAD>
+    <meta charset="utf-8" />
+    <META NAME="GENERATOR" Content="Microsoft Visual Studio">
+    <TITLE></TITLE>
+    <script type="text/javascript" src="./ToneGenerator.js"></script>
+    <script type="text/javascript">
+        function consoleLog(message) { console.log(message); }
+        function consoleError(message) {
+            //alert(message);
+            console.error(message);
+        }
+        function getElementFromEvent(event) {
+            if (!event) event = window.event;//for IE6
+            return event.target || event.srcElement;
+        }
+        function toneGeneratorToggle(event, options) {
+            var elStartButton = getElementFromEvent(event);
+            if (typeof elStartButton.toneGenerator == 'undefined') elStartButton.toneGenerator = new toneGenerator(options);
+            elStartButton.innerHTML = elStartButton.toneGenerator.toggle() ? 'Stop' : 'Start';
+        }
+    </script>
+</HEAD>
+<BODY>
+    <p><a href='../index.html'>Home</a> | <a href='https://github.com/anhr/ToneGenerator' target="_blank">GitHub</a></p>
+
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <!-- Рекламный блок -->
+    <ins class="adsbygoogle"
+         style="display:inline-block;width:728px;height:90px"
+         data-ad-client="ca-pub-2575715742658777"
+         data-ad-slot="8810450588"></ins>
+    <script>
+	(adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+
+    <h1>Tone generator</h1>
+    
+    <div>440Hz <button onclick="javascript: toneGeneratorToggle(event)">Start</button></div>
+    <div>8000Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency: 8000 })">Start</button></div>
+</BODY>
+</HTML>
