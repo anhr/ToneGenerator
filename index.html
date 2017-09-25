@@ -37,11 +37,11 @@
         <button onclick="javascript: toneGeneratorToggle(event, {frequency: 500, harmonics: [{ volume: 0.01 }, { volume: 0.005 }] })">Start</button>
          with harmonics
     </div>
-    <div>600Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency:  600})">Start</button></div>
-    <div>700Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency:  700})">Start</button></div>
-    <div>800Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency:  800})">Start</button></div>
-    <div>900Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency:  900})">Start</button></div>
-    <div>1000Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency:  1000})">Start</button></div>
+    <div>600Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency: 600})">Start</button></div>
+    <div>700Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency: 700})">Start</button></div>
+    <div>800Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency: 800})">Start</button></div>
+    <div>900Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency: 900})">Start</button></div>
+    <div>1000Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency: 1000})">Start</button></div>
     <div>8000Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency: 8000 })">Start</button></div>
     <script type="text/javascript">
         function toneGeneratorToggle(event, options) {
@@ -57,13 +57,12 @@
     <div>440Hz <button onclick="javascript: boom(event)">Boom</button></div>
     <script type="text/javascript">
         function boom(event) {
-            try{
-                var el = toneGenerator.newToneGenerator(event, {
+            try {
+                new toneGenerator.create({
                     volume: 1,
-                    attenuation: { volume: 1.2, time: 3000},
+                    attenuation: { volume: 1.2, time: 3000 },
                     harmonics: [{ volume: 0.05 }, { volume: 0.1 }]
-                });
-                el.toneGenerator.start();
+                }).start();
             } catch (e) {
                 //alert(e);
                 consoleError(e);
