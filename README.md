@@ -1,7 +1,7 @@
 # ToneGenerator
 Tone generator on your web page
 
-Example: <a href='http://anhr.ucoz.net/ToneGenerator/' target="_blank">Tone Generator</a>.
+Example: <a href='https://anhr.github.io/ToneGenerator/' target="_blank">Tone Generator</a>.
 
 ## On the following browsers have been successfully tested:
 
@@ -38,5 +38,5 @@ LG Smart tv
 Thanks to <a href='https://github.com/RolandR/tonegen' target="_blank">RolandR/tonegen</a>
 
 ## Have a job for me?
-Please read <a href='http://anhr.ucoz.net/AboutMe/' target="_blank">About Me</a>.
+Please read <a href='https://anhr.github.io/AboutMe/' target="_blank">About Me</a>.
 

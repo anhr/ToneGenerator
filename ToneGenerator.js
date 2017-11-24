@@ -2,9 +2,9 @@
  * JavaScript source code
  * Author: Andrej Hristoliubov
  * email: anhr@mail.ru
- * About me: http://anhr.ucoz.net/AboutMe/
+ * About me: http://anhr.github.io/AboutMe/
  * source: https://github.com/anhr/ToneGenerator
- * example: http://anhr.ucoz.net/ToneGenerator/
+ * example: http://anhr.github.io/ToneGenerator/
  * Thanks to https://github.com/RolandR/tonegen
  * Licences: GPL, The MIT License (MIT)
  * Copyright: (c) 2015 Andrej Hristoliubov
@@ -22,47 +22,52 @@
 var toneGenerator = {
     create: function (options) {
         this.options = options;
-        if (typeof this.options == 'undefined') this.options = {};
-        if (typeof this.options.muted == 'undefined') this.options.muted = false;
-        if (typeof this.options.wave == 'undefined') this.options.wave = "sine";
-        if (typeof this.options.frequency == 'undefined') this.options.frequency = 440;
-        if (typeof this.options.volume == 'undefined') this.options.volume = Math.pow(0.3, 2);
-        if (typeof this.options.pan == 'undefined') this.options.pan = 0;
+        if (this.options == undefined) this.options = {};
+
+        //https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API
+        if (this.options.audio == undefined) toneGenerator.audio = new (window.AudioContext || window.webkitAudioContext)();
+        else toneGenerator.audio = this.options.audio;
+
+        if (this.options.muted == undefined) this.options.muted = false;
+        if (this.options.wave == undefined) this.options.wave = "sine";
+//        if (this.options.frequency == undefined) this.options.frequency = 440;
+        if (this.options.volume == undefined) this.options.volume = Math.pow(0.3, 2);
+        if (this.options.pan == undefined) this.options.pan = 0;
 
         this.createAudioContext = function () {
-            if (typeof this.audio != 'undefined')
-                return true;
-            this.audio = new (window.AudioContext || window.webkitAudioContext)();
-            if (!this.audio) {
+            if (!toneGenerator.audio) {
                 consoleError("Coudn't initiate audio context!");
                 return false;
             }
-            this.oscillator = this.audio.createOscillator();
+            if (this.oscillator != undefined)
+                return true;
+            this.oscillator = toneGenerator.audio.createOscillator();
             this.oscillator.type = this.options.wave;
-            this.oscillator.frequency.value = this.options.frequency;
-            this.oscillator.start();
+            if (this.options.frequency != undefined) this.oscillator.frequency.value = this.options.frequency;
+//            this.oscillator.start();
 
-            this.gain = this.audio.createGain();
+            this.gain = toneGenerator.audio.createGain();
             this.gain.gain.value = this.options.muted ? 0 : this.options.volume;
 
-            this.panner = this.audio.createPanner();
+            this.panner = toneGenerator.audio.createPanner();
             this.panner.setPosition(Math.sin(this.options.pan), 0, Math.cos(this.options.pan));
 
-            this.analyser = this.audio.createAnalyser();
+            this.analyser = toneGenerator.audio.createAnalyser();
             //this.analyser.smoothingTimeConstant = 1;
 
-            this.audio.suspend();
+            toneGenerator.audio.suspend();
             this.oscillator.connect(this.gain);
             this.gain.connect(this.panner);
             this.panner.connect(this.analyser);
-            this.analyser.connect(this.audio.destination);
+            this.analyser.connect(toneGenerator.audio.destination);
             return true;
         }
         if (!this.createAudioContext())
             return;
-
+        this.playing = false;
         this.toggle = function () {
-            if ((typeof this.audio == 'undefined') || (this.audio.state == "suspended")) {
+            this.playing = !this.playing;
+            if (this.playing) {
                 this.start();
                 return true;
             }
@@ -70,67 +75,70 @@ var toneGenerator = {
             return false;
         }
         this.start = function () {
-            consoleLog('toneGenerator.start() ' + JSON.stringify(this.options));
+            consoleLog('toneGenerator.start() ');// + JSON.stringify(this.options));
             if (!this.createAudioContext())
                 return;
-            this.audio.resume();
+            toneGenerator.audio.resume();
             if (!this.options.muted) this.gain.gain.value = this.options.volume;
 
+            //Periodic Wave https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createPeriodicWave
+            if (this.options.arraysPeriodicWave != undefined)
+                this.oscillator.setPeriodicWave(ac.createPeriodicWave(this.options.arraysPeriodicWave.real, this.options.arraysPeriodicWave.imag));
+/*
             //Add harmonics
-            if (typeof this.options.harmonics != 'undefined') {
+            if (this.options.harmonics != undefined) {
                 for (i = 0; i < options.harmonics.length; i++) {
                     var harmonic = options.harmonics[i];
                     consoleLog('harmonic ' + i + ': ' + JSON.stringify(harmonic));
                     harmonic.toneGenerator = new toneGenerator.create({
-                        frequency: this.options.frequency * (i + 2),
+                        audio: options.audio,
+                        frequency: (this.options.frequency == undefined ? this.oscillator.frequency.value : this.options.frequency) * (i + 2),
                         attenuation: options.attenuation,
                         time: options.time,
-                        volume: harmonic.volume
+                        volume: harmonic.volume,
+                        scope: options.scope
                     });
                     harmonic.toneGenerator.start();
                 }
             }
-
+*/
             //attenuation
-            if (typeof this.options.attenuation != 'undefined') {
-                if ((typeof this.options.attenuation.time != 'undefined') && (typeof this.options.attenuation.volume != 'undefined')) {
+            if (this.options.attenuation != undefined) {
+                if ((this.options.attenuation.time != undefined) && (this.options.attenuation.volume != undefined)) {
                     this.clearInterval();
                     var tg = this;
                     this.options.timerIdInterval = setInterval(function () {
                         tg.gain.gain.value /= options.attenuation.volume;
-                        if (typeof options.harmonics != 'undefined')
+                        if (options.harmonics != undefined)
                             options.harmonics.forEach(function (harmonic) { harmonic.toneGenerator.gain.gain.value /= options.attenuation.volume; });
                     }, this.options.attenuation.time / 50);
 
                     //stop
-                    if (typeof this.options.timerIdTimeout != 'undefined') {
+                    if (this.options.timerIdTimeout != undefined) {
                         clearTimeout(this.options.timerIdTimeout);
                         delete this.options.timerIdTimeout;
                     }
-                    if (typeof this.options.attenuation.time != 'undefined')
+                    if (this.options.attenuation.time != undefined)
                         this.options.timerIdTimeout = setTimeout(function () { tg.stop(); }, this.options.attenuation.time);
                 } else consoleError('options.attenuation: ' + JSON.stringify(this.options.attenuation));
             }
+            this.oscillator.start();
+            switch (typeof options.scope) {
+                case "object": this.oscillator.connect(options.scope.input); break;
+                case "undefined": break;
+                default: consoleError('scope: ' + options.scope);
+            }
         }
         this.stop = function () {
-            consoleLog('toneGenerator.stop()' + JSON.stringify(this.options));
-            this.gain.gain.value = 0;
-            var toneGenerator = this;
-
-            // The timeout and gain=0 is to avoid a harsh popping sound on suspend
-            // setTimeout(function () { toneGenerator.audio.suspend(); toneGenerator.audio.close(); delete toneGenerator.audio; }, 100);
-
-            if (typeof toneGenerator.audio != 'undefined') {
-                toneGenerator.audio.suspend();
-                toneGenerator.audio.close();
-                delete toneGenerator.audio;
-            }
-
+            consoleLog('toneGenerator.stop()');// + JSON.stringify(this.options));
+            if (this.oscillator != undefined)
+                this.oscillator.stop();
+            delete this.oscillator;
             this.clearInterval();
-            if (typeof this.options.harmonics != 'undefined') this.options.harmonics.forEach(function (harmonic) { harmonic.toneGenerator.stop(); });
+            if (this.options.harmonics != undefined) this.options.harmonics.forEach(function (harmonic) { harmonic.toneGenerator.stop(); });
         }
         this.clearInterval = function () {
-            if (typeof this.options.timerIdInterval == 'undefined')
+            if (this.options.timerIdInterval == undefined)
                 return;
             clearTimeout(this.options.timerIdInterval);
             delete this.options.timerIdInterval;
@@ -138,7 +146,7 @@ var toneGenerator = {
     },
     newToneGenerator: function (event, options) {
         var el = getElementFromEvent(event);
-        if (typeof el.toneGenerator == 'undefined') el.toneGenerator = new toneGenerator.create(options);
+        if (el.toneGenerator == undefined) el.toneGenerator = new toneGenerator.create(options);
         return el;
     },
 }

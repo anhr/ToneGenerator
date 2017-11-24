@@ -4,6 +4,8 @@
     <META NAME="GENERATOR" Content="Microsoft Visual Studio">
     <TITLE></TITLE>
     <script type="text/javascript" src="./ToneGenerator.js"></script>
+    <script type="text/javascript" src="../../Scope/ScopeKevincennis/Scope/src/scope.js"></script>
+    <script type="text/javascript" src="../../Scope/ScopeKevincennis/Scope/src/MediaElementAudio.js"></script>
     <script type="text/javascript">
         function consoleLog(message) { console.log(message); }
         function consoleError(message) {
@@ -14,6 +16,7 @@
             if (!event) event = window.event;//for IE6
             return event.target || event.srcElement;
         }
+        var ac = new (window.AudioContext || window.webkitAudioContext)();
     </script>
 </HEAD>
 <BODY>
@@ -31,7 +34,7 @@
 
     <h1>Tone generator</h1>
     
-    <div>440Hz <button onclick="javascript: toneGeneratorToggle(event)">Start</button></div>
+    <div>Default <button onclick="javascript: toneGeneratorToggle(event)">Start</button></div>
     <div>500Hz <button onclick="javascript: toneGeneratorToggle(event, { frequency: 500 })">Start</button></div>
     <div>500Hz 
         <button onclick="javascript: toneGeneratorToggle(event, {frequency: 500, harmonics: [{ volume: 0.01 }, { volume: 0.005 }] })">Start</button>
@@ -46,14 +49,33 @@
     <script type="text/javascript">
         function toneGeneratorToggle(event, options) {
             try {
+                if (options == undefined) options = {};
+                options.audio = ac;
                 var el = toneGenerator.newToneGenerator(event, options);
-                el.innerHTML = el.toneGenerator.toggle() ? 'Stop' : 'Start';
+                var buttonText;
+                if (el.toneGenerator.toggle()) {
+                    buttonText = 'Stop';
+                    el.toneGenerator.oscillator.connect(scope.input);
+/*
+                    scope({
+                        audio: toneGenerator.audio,
+                        analyser: el.toneGenerator.analyser,
+                        backgroundCanvas: document.getElementById("scopeBackground"),
+                        scopeCanvas: document.getElementById("scopeCanvas")
+                    });
+*/
+                } else {
+                    buttonText = 'Start';
+                }
+                el.innerHTML = buttonText;
+//                el.innerHTML = el.toneGenerator.toggle() ? 'Stop' : 'Start';
             } catch (e) {
                 //alert(e);
                 consoleError(e);
             }
         }
     </script>
+    <!--Boom-->
     <div>440Hz <button onclick="javascript: boom(event)">Boom</button></div>
     <script type="text/javascript">
         function boom(event) {
@@ -69,5 +91,150 @@
             }
         }
     </script>
-</BODY>
+
+    <hr>
+    <!--Scope-->
+    <div>
+        <h2>Scope</h2>
+        <!--
+                <canvas id="scopeCanvas" height="200" width="200"></canvas>
+                <canvas id="scopeBackground" height="200" width="200"></canvas>
+        -->
+        <canvas id="osc" width="600" height="300"></canvas>
+        <p>Stabilization sensitivity</p>
+
+        <p>
+            <input id="min" type="range" min="1" max="100" />
+            <label id="label" for="min"></label>
+        </p>
+        <br>
+
+        <hr>
+        <p>Wave type</p>
+
+        <p>
+            <input id="sine" type="radio" name="type" value="sine">
+            <label for="sine">sine</label>
+            <input id="triangle" type="radio" name="type" value="triangle">
+            <label for="triangle">triangle</label>
+            <input id="sawtooth" type="radio" name="type" value="sawtooth">
+            <label for="sawtooth">sawtooth</label>
+            <input id="square" type="radio" name="type" value="square">
+            <label for="square">square</label>
+            <input id="custom" type="radio" name="type" value="custom" checked>
+            <label for="custom">custom</label>
+            <input id="microphone" type="radio" name="type" value="microphone">
+            <label for="microphone">microphone</label>
+            <!--
+                        <input id="audioOutput" type="radio" name="type" value="audioOutput">
+                        <label for="audioOutput">audio output</label>
+            -->
+        </p>
+
+    </div>
+    <script type="text/javascript">
+        var canvas = document.querySelector('#osc'),
+          osc,// = ac.createOscillator(),
+          scope = new Scope(ac, canvas),
+          slider = document.querySelector('#min'),
+          label = document.querySelector('#label'),
+          radios = document.querySelectorAll('input[type=radio]'),
+          mic;//real, imag, wave;
+
+        function scale(val, f0, f1, t0, t1) {
+            return (val - f0) * (t1 - t0) / (f1 - f0) + t0;
+        }
+
+        slider.value = scope.sensitivity;
+        label.textContent = ~~scope.sensitivity;
+        /*
+                osc.connect(scope.input);
+                osc.connect(ac.destination);
+                osc.frequency.value = 440;
+        */
+
+        scope.start();
+
+        slider.addEventListener('input', function () {
+            scope.sensitivity = slider.value;
+            label.textContent = slider.value;
+        }, false);
+
+        [].forEach.call(radios, function (radio) {
+            radio.addEventListener('click', function (ev) {
+                if (osc == undefined) {
+                    osc = ac.createOscillator();
+                }
+                osc.frequency.value = 440;
+                switch (ev.target.value) {
+                    case 'microphone': return microphone();
+                        //                    case 'audioOutput': return audioOutput();
+                }
+                mic && mic.disconnect();
+                osc.connect(scope.input);
+                osc.connect(ac.destination);
+                if (ev.target.value === 'custom') {
+                    // each index (past 0) represents a partial in the harmonic series
+                    // so index 1 is the fundamental, index 2 is an octave,
+                    // index 3 is a perfect fifth, index 4 is another octave
+                    // index 5 is a major third, etc...
+
+                    // an array of [ 0, 1 ] would be a perfect sine wave
+                    var real = new Float32Array([0, -0.9, -0.6, -0.3, 0, 0.3, 0.6, 0.9, 1]),
+                        imag = real;
+                    osc.setPeriodicWave(ac.createPeriodicWave(real, imag));
+                } else {
+                    osc.type = ev.target.value;
+                }
+                osc.start();
+            });
+        });
+
+        function microphone() {
+            osc.disconnect();
+            if (mic) {
+                mic.connect(scope.input);
+                return;
+            }
+            function success(stream) {
+                mic = ac.createMediaStreamSource(stream);
+                mic.connect(scope.input);
+            }
+            function error() { }
+            if (navigator.webkitGetUserMedia) {
+                navigator.webkitGetUserMedia({ audio: true }, success, error);
+            } else if (navigator.mozGetUserMedia) {
+                navigator.mozGetUserMedia({ audio: true }, success, error);
+            } else if (navigator.getUserMedia) {
+                navigator.getUserMedia({ audio: true }, success, error);
+            } else {
+                alert('Microphone access not supported by your browser. Try Chrome');
+            }
+        }
+    </script>
+
+    <hr>
+    <!--Audio player-->
+    <h2>Audio player</h2>
+    <audio id="myAudio" controls src="DST-Canopy.mp3"></audio><span id="audioFile"></span>
+    <script type="text/javascript">
+
+        MediaElementAudio.Scope(document.getElementById("myAudio"), ac, scope);
+
+        document.getElementById("myAudio").onloadedmetadata = function () {
+            //consoleLog("Meta data for audio loaded");
+            document.getElementById("audioFile").innerHTML = this.src;
+        };
+    </script>
+
+    <hr>
+    <!--Synthesizer-->
+    <div class="synzer">
+        <div class="controls"></div>
+        <div class="keyboard"></div>
+    </div>
+
+    <script src="./Synzer/js/prod/app.js">
+
+    </script></BODY>
 </HTML>
